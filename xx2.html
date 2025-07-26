@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Phân trang tĩnh</title>
+  <style>
+    .pagination {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 5px;
+      margin-top: 20px;
+    }
+    .pagination button {
+      padding: 6px 12px;
+      border: 1px solid #ccc;
+      background: white;
+      cursor: pointer;
+    }
+    .pagination button.active {
+      background: #007bff;
+      color: white;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="pagination" id="pagination"></div>
+
+  <script>    
+  const paginationElement = document.getElementById('pagination')
+  const pageCache = new Map(); // Map giữ thứ tự
+
+    const MAX_CACHE = 9;
+    var api =` https://phimapi.com/danh-sach/phim-moi-cap-nhat?`
+    function callAPI(api){
+       const url = new URL(api.trim());
+        const page = url.searchParams.get('page') || '1';
+
+      if (pageCache.has(page)) {
+        render(pageCache.get(page).pagination);
+          return;
+        }
+        fetch(api)
+        .then(function(respone){
+          return respone.json()
+        })
+        .then(function(results){
+          //Thêm vào cache
+          pageCache.set(page,results);
+          console.log([...pageCache.entries()]);
+          //Nếu cache vượt quá giới hạn ,xóa trang cũ nhất
+           if (pageCache.size > MAX_CACHE) {
+          const oldestPage = pageCache.keys().next().value;
+          pageCache.delete(oldestPage);
+          }
+          render(results.pagination)
+        })
+    }
+   function render(pagination){
+    var {currentPage,totalPages} = pagination
+    var htmls =''
+
+    if(currentPage > 1){
+      htmls+=`<button onclick="changePage(${currentPage - 1})">« Prev</button>`;
+    }
+
+    startPage = currentPage;
+    endPage =Math.min(totalPages,currentPage+4);
+
+    for(var i =startPage; i <= endPage ;i++){
+       htmls += `<button class="${i === currentPage ? 'active' : ''}" onclick="changePage(${i})">${i}</button>`;
+    }
+    if(currentPage<totalPages){
+       htmls += `<button onclick="changePage(${currentPage + 1})">Next »</button>`;
+    }
+    paginationElement.innerHTML = htmls;
+
+    }
+    function changePage(newPage){
+      var api =` https://phimapi.com/danh-sach/phim-moi-cap-nhat?page=${newPage}`
+      callAPI(api)
+    }
+    callAPI(api)
+  </script>
+
+</body>
+</html>

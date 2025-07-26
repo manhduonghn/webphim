@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Phân trang tĩnh</title>
+  <style>
+    .pagination {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 5px;
+      margin-top: 20px;
+    }
+    .pagination button {
+      padding: 6px 12px;
+      border: 1px solid #ccc;
+      background: white;
+      cursor: pointer;
+    }
+    .pagination button.active {
+      background: #007bff;
+      color: white;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="pagination" id="pagination"></div>
+
+  <script>
+    const pagination = {
+      totalItems: 23477,
+      totalItemsPerPage: 10,
+      currentPage: 1,
+      totalPages: 2348
+    };
+
+    const paginationContainer = document.getElementById('pagination');
+
+    function renderPagination(pagination) {
+      const { currentPage, totalPages } = pagination;
+      let html = '';
+
+      // Prev
+      if (currentPage > 1) {
+        html += `<button onclick="changePage(${currentPage - 1})">« Prev</button>`;
+      }
+
+      // Tối đa hiển thị 5 trang xung quanh
+      const maxButtons = 5;
+      let startPage = Math.max(1, currentPage - 2);
+      let endPage = Math.min(totalPages, currentPage + 2);
+
+      // Nếu gần cuối hoặc đầu thì điều chỉnh lại
+      if (currentPage <= 2) {
+        endPage = Math.min(totalPages, 5);
+      } else if (currentPage >= totalPages - 1) {
+        startPage = Math.max(1, totalPages - 4);
+      }
+
+      for (let i = startPage; i <= endPage; i++) {
+        html += `<button class="${i === currentPage ? 'active' : ''}" onclick="changePage(${i})">${i}</button>`;
+      }
+
+      // Next
+      if (currentPage < totalPages) {
+        html += `<button onclick="changePage(${currentPage + 1})">Next »</button>`;
+      }
+
+      paginationContainer.innerHTML = html;
+    }
+
+    function changePage(newPage) {
+      pagination.currentPage = newPage;
+      renderPagination(pagination);
+    }
+
+    // Ban đầu
+    renderPagination(pagination);
+  </script>
+
+</body>
+</html>
