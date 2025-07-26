@@ -29,9 +29,6 @@ function callLatestMoviesAPI(page = 1) {
             return response.json();
         })
         .then(function(results) {
-            // Note: The /danh-sach/phim-moi-cap-nhat API directly returns 'items' and 'pagination'
-            // without a 'data' wrapper, unlike the /v1/api/... APIs.
-            // So we directly pass results.pagination and results.items.
             renderMoviesAndPagination(results.pagination, results.items, 'latest');
         })
         .catch(function(error) {
@@ -42,7 +39,7 @@ function callLatestMoviesAPI(page = 1) {
 }
 
 // --- Function to render movies and pagination (shared logic) ---
-// This function is now more robust to handle missing category/country data.
+// This function is now more robust to handle missing category/country/season data.
 function renderMoviesAndPagination(pagination, items, filterType, filterValue) {
     let { currentPage, totalPages } = pagination;
     currentPage = currentPage || 1;
@@ -100,15 +97,20 @@ function renderMoviesAndPagination(pagination, items, filterType, filterValue) {
             // Check if category and country exist before trying to map them
             const categories = item.category && item.category.length > 0 ? item.category.map(cat => cat.name).join(', ') : '';
             const countries = item.country && item.country.length > 0 ? item.country.map(coun => coun.name).join(', ') : '';
+            
+            // NEW: Check for season data
+            const season = item.tmdb && item.tmdb.type === 'tv' && item.tmdb.season ? item.tmdb.season : null;
+
 
             let imageUrl = item.poster_url;
             if (imageUrl && !imageUrl.startsWith('http')) {
                 imageUrl = IMAGE_CDN_BASE + '/' + imageUrl.replace(/^\//, '');
             }
 
-            // Conditionally add category and country lines
+            // Conditionally add category, country, and season lines
             const categoryHtml = categories ? `<p class="card-text">Thể loại: ${categories}</p>` : '';
             const countryHtml = countries ? `<p class="card-text">Quốc gia: ${countries}</p>` : '';
+            const seasonHtml = season ? `<p class="card-text">Mùa: ${season}</p>` : ''; // NEW: Season HTML
 
             content += `<div onclick="tranfor('${item.slug}')" class="col">
                 <div class="card h-100">
@@ -117,7 +119,7 @@ function renderMoviesAndPagination(pagination, items, filterType, filterValue) {
                     <h5 class="card-title">${item.name}</h5>
                     ${categoryHtml}
                     ${countryHtml}
-                    <p class="card-text">Năm: ${item.year}</p>
+                    ${seasonHtml}  <p class="card-text">Năm: ${item.year}</p>
                   </div>
                 </div>
               </div>`;
