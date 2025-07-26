@@ -94,7 +94,8 @@ function render(pagination, items) {
             // Correct image URL
             let imageUrl = item.poster_url;
             if (imageUrl && !imageUrl.startsWith('http')) {
-                imageUrl = IMAGE_CDN_BASE + imageUrl;
+                // Prepend IMAGE_CDN_BASE and ensure there's a single slash
+                imageUrl = IMAGE_CDN_BASE + '/' + imageUrl.replace(/^\//, ''); // Removes leading slash from imageUrl if present
             }
 
             content += `<div onclick="tranfor('${item.slug}')" class="col">
