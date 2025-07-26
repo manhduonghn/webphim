@@ -5,7 +5,7 @@ const searchElement = document.querySelector('input[type="text"]');
 const searchbutton = document.querySelector('#btnsearch');
 const genreDropdown = document.querySelector('#genreDropdown');
 const countryDropdown = document.querySelector('#countryDropdown');
-const yearDropdown = document.querySelector('#yearDropdown'); // New: for years
+const yearDropdown = document.querySelector('#yearDropdown');
 
 let currentFilterType = 'latest'; // 'latest', 'genre', 'country', 'year'
 let currentFilterSlug = ''; // Stores the slug for genre/country
@@ -15,17 +15,17 @@ let currentYear = ''; // Stores the selected year
 const API_BASE = `https://phimapi.com`;
 const API_LATEST = `${API_BASE}/danh-sach/phim-moi-cap-nhat?`;
 const API_GENRES = `${API_BASE}/the-loai`;
-const API_COUNTRIES = `${API_BASE}/quoc-gia`; // Assuming this endpoint exists based on the pattern
+const API_COUNTRIES = `${API_BASE}/quoc-gia`; // Still assuming this endpoint exists
 const API_MOVIES_BY_GENRE = `${API_BASE}/v1/api/the-loai/`; // Requires slug and page
 const API_MOVIES_BY_COUNTRY = `${API_BASE}/v1/api/quoc-gia/`; // Requires slug and page
-const API_MOVIES_BY_YEAR = `${API_BASE}/v1/api/nam/`; // Requires year and page
+const API_MOVIES_BY_YEAR = `${API_BASE}/v1/api/nam/`; // Corrected: Uses 'nam'
+const IMAGE_CDN_BASE = `https://phimimg.com`; // New: Base URL for images
 
 // --- Function to fetch and render movie data ---
 function callMovieAPI(apiURL) {
     fetch(apiURL)
         .then(function(response) {
             if (!response.ok) {
-                // Handle cases where response might not be OK (e.g., 404 for no movies)
                 if (response.status === 404) {
                     return { pagination: { currentPage: 0, totalPages: 0 }, items: [] };
                 }
@@ -91,9 +91,15 @@ function render(pagination, items) {
             const categories = item.category ? item.category.map(cat => cat.name).join(', ') : 'N/A';
             const countries = item.country ? item.country.map(coun => coun.name).join(', ') : 'N/A';
 
+            // Correct image URL
+            let imageUrl = item.poster_url;
+            if (imageUrl && !imageUrl.startsWith('http')) {
+                imageUrl = IMAGE_CDN_BASE + imageUrl;
+            }
+
             content += `<div onclick="tranfor('${item.slug}')" class="col">
                 <div class="card h-100">
-                  <img src="${item.poster_url}" class="card-img-top img-fit" alt="${item.name}">
+                  <img src="${imageUrl}" class="card-img-top img-fit" alt="${item.name}">
                   <div class="card-body">
                     <h5 class="card-title">${item.name}</h5>
                     <p class="card-text">Thể loại: ${categories}</p>
@@ -174,10 +180,6 @@ function fetchGenres() {
 
 // Fetch Countries (Assuming a similar API structure to genres)
 function fetchCountries() {
-    // You'll need to confirm the exact API endpoint for countries.
-    // For now, I'll use a placeholder URL and structure.
-    // If your API doesn't have a direct endpoint for all countries,
-    // you might need to collect them from movie data or manually define them.
     fetch(API_COUNTRIES) // This URL needs to be verified
         .then(response => response.json())
         .then(data => {
@@ -200,11 +202,11 @@ function fetchCountries() {
         .catch(error => console.error('Error fetching countries:', error));
 }
 
-// Populate Years (Generate years dynamically, as there's no specific API for years)
+// Populate Years (Generate years dynamically)
 function populateYears() {
-    const currentYear = new Date().getFullYear();
+    const currentYearNum = new Date().getFullYear();
     let html = '';
-    for (let year = currentYear; year >= 1990; year--) { // Go back to 1990, adjust as needed
+    for (let year = currentYearNum; year >= 1990; year--) { // Go back to 1990, adjust as needed
         html += `<li><a class="dropdown-item" href="#" data-year="${year}">${year}</a></li>`;
     }
     yearDropdown.innerHTML = html;
