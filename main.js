@@ -1,4 +1,3 @@
-var currentApi = `https://phimapi.com/danh-sach/phim-moi-cap-nhat?`;
 const paginationElement = document.querySelector('#phantrang');
 const contentPhim = document.querySelector('#contentPhim');
 const searchElement = document.querySelector('input[type="text"]');
@@ -7,23 +6,16 @@ const genreDropdown = document.querySelector('#genreDropdown');
 const countryDropdown = document.querySelector('#countryDropdown');
 const yearDropdown = document.querySelector('#yearDropdown');
 
-let currentFilterType = 'latest'; // 'latest', 'genre', 'country', 'year'
-let currentFilterSlug = ''; // Stores the slug for genre/country
-let currentYear = ''; // Stores the selected year
-
 // --- API Endpoints ---
 const API_BASE = `https://phimapi.com`;
 const API_LATEST = `${API_BASE}/danh-sach/phim-moi-cap-nhat?`;
 const API_GENRES = `${API_BASE}/the-loai`;
-const API_COUNTRIES = `${API_BASE}/quoc-gia`; // Still assuming this endpoint exists
-const API_MOVIES_BY_GENRE = `${API_BASE}/v1/api/the-loai/`; // Requires slug and page
-const API_MOVIES_BY_COUNTRY = `${API_BASE}/v1/api/quoc-gia/`; // Requires slug and page
-const API_MOVIES_BY_YEAR = `${API_BASE}/v1/api/nam/`; // Corrected: Uses 'nam'
-const IMAGE_CDN_BASE = `https://phimimg.com`; // New: Base URL for images
+const API_COUNTRIES = `${API_BASE}/quoc-gia`;
+const IMAGE_CDN_BASE = `https://phimimg.com`;
 
-// --- Function to fetch and render movie data ---
-function callMovieAPI(apiURL) {
-    fetch(apiURL)
+// --- Function to fetch and render movie data (for latest movies on index.html) ---
+function callLatestMoviesAPI(page = 1) {
+    fetch(`${API_LATEST}page=${page}`)
         .then(function(response) {
             if (!response.ok) {
                 if (response.status === 404) {
@@ -34,29 +26,38 @@ function callMovieAPI(apiURL) {
             return response.json();
         })
         .then(function(results) {
-            // Adjust to handle data structure from genre/country/year APIs
-            const paginationData = results.data ? results.data.params.pagination : results.pagination;
-            const itemsData = results.data ? results.data.items : results.items;
-            render(paginationData, itemsData);
+            renderMoviesAndPagination(results.pagination, results.items, 'latest');
         })
         .catch(function(error) {
-            console.error("Error fetching movie data:", error);
-            contentPhim.innerHTML = `<div class="col-12 text-center text-light">Không tìm thấy phim nào.</div>`;
-            paginationElement.innerHTML = ''; // Clear pagination
+            console.error("Error fetching latest movie data:", error);
+            contentPhim.innerHTML = `<div class="col-12 text-center text-light">Không tìm thấy phim mới nào.</div>`;
+            paginationElement.innerHTML = '';
         });
 }
 
-// --- Function to render movies and pagination ---
-function render(pagination, items) {
-    // Render pagination
+// --- Function to render movies and pagination (shared logic) ---
+function renderMoviesAndPagination(pagination, items, filterType, filterValue) {
     let { currentPage, totalPages } = pagination;
-    currentPage = currentPage || 1; // Default to 1 if not provided (e.g., when no results)
-    totalPages = totalPages || 1; // Default to 1 if not provided
+    currentPage = currentPage || 1;
+    totalPages = totalPages || 1;
 
+    // Render pagination
     let htmls = '';
+    // Determine the base URL for pagination links
+    let paginationBaseUrl = '';
+    if (filterType === 'latest') {
+        paginationBaseUrl = 'index.html';
+    } else if (filterType === 'genre') {
+        paginationBaseUrl = `genre.html?slug=${encodeURIComponent(filterValue)}`;
+    } else if (filterType === 'country') {
+        paginationBaseUrl = `country.html?slug=${encodeURIComponent(filterValue)}`;
+    } else if (filterType === 'year') {
+        paginationBaseUrl = `year.html?year=${encodeURIComponent(filterValue)}`;
+    }
+
     if (currentPage > 1) {
-        htmls += `<li onclick="changePage(${currentPage - 1})" class="page-item">
-        <a class="page-link" aria-label="Previous">
+        htmls += `<li class="page-item">
+        <a class="page-link" href="${paginationBaseUrl}&page=${currentPage - 1}" aria-label="Previous">
           <span aria-hidden="true">&laquo;</span>
         </a>
       </li>`;
@@ -66,18 +67,19 @@ function render(pagination, items) {
     let startPage = Math.max(1, currentPage - Math.floor(maxPagesToShow / 2));
     let endPage = Math.min(totalPages, startPage + maxPagesToShow - 1);
 
-    // Adjust startPage if endPage pushes it too far back
     if (endPage - startPage + 1 < maxPagesToShow) {
         startPage = Math.max(1, endPage - maxPagesToShow + 1);
     }
 
     for (let i = startPage; i <= endPage; i++) {
-        htmls += `<li onclick="changePage(${i})" class="page-item ${i === currentPage ? 'active' : ''}"><a class="page-link">${i}</a></li>`;
+        htmls += `<li class="page-item ${i === currentPage ? 'active' : ''}">
+                    <a class="page-link" href="${paginationBaseUrl}&page=${i}">${i}</a>
+                  </li>`;
     }
 
     if (currentPage < totalPages) {
-        htmls += `<li onclick="changePage(${currentPage + 1})" class="page-item">
-        <a class="page-link" aria-label="Next">
+        htmls += `<li class="page-item">
+        <a class="page-link" href="${paginationBaseUrl}&page=${currentPage + 1}" aria-label="Next">
           <span aria-hidden="true">&raquo;</span>
         </a>
       </li>`;
@@ -91,11 +93,9 @@ function render(pagination, items) {
             const categories = item.category ? item.category.map(cat => cat.name).join(', ') : 'N/A';
             const countries = item.country ? item.country.map(coun => coun.name).join(', ') : 'N/A';
 
-            // Correct image URL
             let imageUrl = item.poster_url;
             if (imageUrl && !imageUrl.startsWith('http')) {
-                // Prepend IMAGE_CDN_BASE and ensure there's a single slash
-                imageUrl = IMAGE_CDN_BASE + '/' + imageUrl.replace(/^\//, ''); // Removes leading slash from imageUrl if present
+                imageUrl = IMAGE_CDN_BASE + '/' + imageUrl.replace(/^\//, '');
             }
 
             content += `<div onclick="tranfor('${item.slug}')" class="col">
@@ -116,21 +116,6 @@ function render(pagination, items) {
     contentPhim.innerHTML = content;
 }
 
-// --- Handle Page Changes ---
-function changePage(newPage) {
-    let apiToCall = '';
-    if (currentFilterType === 'latest') {
-        apiToCall = `${API_LATEST}page=${newPage}`;
-    } else if (currentFilterType === 'genre') {
-        apiToCall = `${API_MOVIES_BY_GENRE}${currentFilterSlug}?page=${newPage}`;
-    } else if (currentFilterType === 'country') {
-        apiToCall = `${API_MOVIES_BY_COUNTRY}${currentFilterSlug}?page=${newPage}`;
-    } else if (currentFilterType === 'year') {
-        apiToCall = `${API_MOVIES_BY_YEAR}${currentYear}?page=${newPage}`;
-    }
-    callMovieAPI(apiToCall);
-}
-
 // --- Redirect to Movie Detail Page ---
 function tranfor(slug) {
     window.location.href = `contentmain.html?slug=${encodeURIComponent(slug)}`;
@@ -146,7 +131,6 @@ function search() {
             window.location.href = `search.html?keyword=${encodeURIComponent(content)}`;
         }
     };
-    // Also allow searching by pressing Enter in the input field
     searchElement.addEventListener('keypress', function(e) {
         if (e.key === 'Enter') {
             searchbutton.click();
@@ -154,7 +138,7 @@ function search() {
     });
 }
 
-// --- Fetch and Populate Dropdowns ---
+// --- Populate Dropdowns with links to new pages ---
 
 // Fetch Genres
 function fetchGenres() {
@@ -163,70 +147,45 @@ function fetchGenres() {
         .then(data => {
             let html = '';
             data.forEach(genre => {
-                html += `<li><a class="dropdown-item" href="#" data-slug="${genre.slug}">${genre.name}</a></li>`;
+                // Link to genre.html with slug parameter
+                html += `<li><a class="dropdown-item" href="genre.html?slug=${encodeURIComponent(genre.slug)}">${genre.name}</a></li>`;
             });
             genreDropdown.innerHTML = html;
-            // Add event listeners to genre items
-            genreDropdown.querySelectorAll('.dropdown-item').forEach(item => {
-                item.addEventListener('click', function(e) {
-                    e.preventDefault();
-                    currentFilterType = 'genre';
-                    currentFilterSlug = this.dataset.slug;
-                    callMovieAPI(`${API_MOVIES_BY_GENRE}${currentFilterSlug}?page=1`);
-                });
-            });
         })
         .catch(error => console.error('Error fetching genres:', error));
 }
 
-// Fetch Countries (Assuming a similar API structure to genres)
+// Fetch Countries
 function fetchCountries() {
-    fetch(API_COUNTRIES) // This URL needs to be verified
+    fetch(API_COUNTRIES)
         .then(response => response.json())
         .then(data => {
             let html = '';
-            // Assuming data is an array of country objects like genres
             data.forEach(country => {
-                html += `<li><a class="dropdown-item" href="#" data-slug="${country.slug}">${country.name}</a></li>`;
+                // Link to country.html with slug parameter
+                html += `<li><a class="dropdown-item" href="country.html?slug=${encodeURIComponent(country.slug)}">${country.name}</a></li>`;
             });
             countryDropdown.innerHTML = html;
-            // Add event listeners to country items
-            countryDropdown.querySelectorAll('.dropdown-item').forEach(item => {
-                item.addEventListener('click', function(e) {
-                    e.preventDefault();
-                    currentFilterType = 'country';
-                    currentFilterSlug = this.dataset.slug;
-                    callMovieAPI(`${API_MOVIES_BY_COUNTRY}${currentFilterSlug}?page=1`);
-                });
-            });
         })
         .catch(error => console.error('Error fetching countries:', error));
 }
 
-// Populate Years (Generate years dynamically)
+// Populate Years
 function populateYears() {
     const currentYearNum = new Date().getFullYear();
     let html = '';
-    for (let year = currentYearNum; year >= 1990; year--) { // Go back to 1990, adjust as needed
-        html += `<li><a class="dropdown-item" href="#" data-year="${year}">${year}</a></li>`;
+    for (let year = currentYearNum; year >= 1990; year--) {
+        // Link to year.html with year parameter
+        html += `<li><a class="dropdown-item" href="year.html?year=${encodeURIComponent(year)}">${year}</a></li>`;
     }
     yearDropdown.innerHTML = html;
-    // Add event listeners to year items
-    yearDropdown.querySelectorAll('.dropdown-item').forEach(item => {
-        item.addEventListener('click', function(e) {
-            e.preventDefault();
-            currentFilterType = 'year';
-            currentYear = this.dataset.year;
-            callMovieAPI(`${API_MOVIES_BY_YEAR}${currentYear}?page=1`);
-        });
-    });
 }
 
-// --- Initial Calls ---
+// --- Initial Calls for index.html ---
 document.addEventListener('DOMContentLoaded', () => {
-    callMovieAPI(API_LATEST); // Load latest movies on page load
+    callLatestMoviesAPI(); // Load latest movies on index page
     search(); // Initialize search
-    fetchGenres(); // Populate genres
-    fetchCountries(); // Populate countries
-    populateYears(); // Populate years
+    fetchGenres(); // Populate genres dropdown
+    fetchCountries(); // Populate countries dropdown
+    populateYears(); // Populate years dropdown
 });
