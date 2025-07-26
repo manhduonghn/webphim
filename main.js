@@ -11,7 +11,10 @@ const API_BASE = `https://phimapi.com`;
 const API_LATEST = `${API_BASE}/danh-sach/phim-moi-cap-nhat?`;
 const API_GENRES = `${API_BASE}/the-loai`;
 const API_COUNTRIES = `${API_BASE}/quoc-gia`;
-const IMAGE_CDN_BASE = `https://phimimg.com`;
+const API_MOVIES_BY_GENRE = `${API_BASE}/v1/api/the-loai/`; // Requires slug and page
+const API_MOVIES_BY_COUNTRY = `${API_BASE}/v1/api/quoc-gia/`; // Requires slug and page
+const API_MOVIES_BY_YEAR = `${API_BASE}/v1/api/nam/`; // Corrected: Uses 'nam'
+const IMAGE_CDN_BASE = `https://phimimg.com`; // Base URL for images
 
 // --- Function to fetch and render movie data (for latest movies on index.html) ---
 function callLatestMoviesAPI(page = 1) {
@@ -26,6 +29,9 @@ function callLatestMoviesAPI(page = 1) {
             return response.json();
         })
         .then(function(results) {
+            // Note: The /danh-sach/phim-moi-cap-nhat API directly returns 'items' and 'pagination'
+            // without a 'data' wrapper, unlike the /v1/api/... APIs.
+            // So we directly pass results.pagination and results.items.
             renderMoviesAndPagination(results.pagination, results.items, 'latest');
         })
         .catch(function(error) {
@@ -36,6 +42,7 @@ function callLatestMoviesAPI(page = 1) {
 }
 
 // --- Function to render movies and pagination (shared logic) ---
+// This function is now more robust to handle missing category/country data.
 function renderMoviesAndPagination(pagination, items, filterType, filterValue) {
     let { currentPage, totalPages } = pagination;
     currentPage = currentPage || 1;
@@ -90,21 +97,26 @@ function renderMoviesAndPagination(pagination, items, filterType, filterValue) {
     let content = '';
     if (items && items.length > 0) {
         items.forEach(function(item) {
-            const categories = item.category ? item.category.map(cat => cat.name).join(', ') : 'N/A';
-            const countries = item.country ? item.country.map(coun => coun.name).join(', ') : 'N/A';
+            // Check if category and country exist before trying to map them
+            const categories = item.category && item.category.length > 0 ? item.category.map(cat => cat.name).join(', ') : '';
+            const countries = item.country && item.country.length > 0 ? item.country.map(coun => coun.name).join(', ') : '';
 
             let imageUrl = item.poster_url;
             if (imageUrl && !imageUrl.startsWith('http')) {
                 imageUrl = IMAGE_CDN_BASE + '/' + imageUrl.replace(/^\//, '');
             }
 
+            // Conditionally add category and country lines
+            const categoryHtml = categories ? `<p class="card-text">Thể loại: ${categories}</p>` : '';
+            const countryHtml = countries ? `<p class="card-text">Quốc gia: ${countries}</p>` : '';
+
             content += `<div onclick="tranfor('${item.slug}')" class="col">
                 <div class="card h-100">
                   <img src="${imageUrl}" class="card-img-top img-fit" alt="${item.name}">
                   <div class="card-body">
                     <h5 class="card-title">${item.name}</h5>
-                    <p class="card-text">Thể loại: ${categories}</p>
-                    <p class="card-text">Quốc gia: ${countries}</p>
+                    ${categoryHtml}
+                    ${countryHtml}
                     <p class="card-text">Năm: ${item.year}</p>
                   </div>
                 </div>
