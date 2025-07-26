@@ -1,14 +1,147 @@
+body {
+  background-color: #222; /* Màu nền tối cho toàn trang */
+  color: #f8f9fa; /* Màu chữ sáng */
+}
 
-    .card {
-      transition: transform 0.3s ease, box-shadow 0.3s ease;
-      cursor: pointer;
-    }
+.navbar {
+  margin-bottom: 20px; /* Khoảng cách dưới navbar */
+}
 
-    .card:hover {
-      transform: translateY(-5px);
-      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
-    }
-     .img-fit {
-    height: 250px; /* Hoặc bao nhiêu bạn muốn */
-    object-fit: cover;
+/* SEARCH BAR STYLES */
+.form-control {
+  background-color: #333;
+  border-color: #555;
+  color: #f8f9fa;
+}
+
+.form-control::placeholder {
+  color: #bbb;
+}
+
+.btn-outline-primary {
+  color: #007bff;
+  border-color: #007bff;
+}
+
+.btn-outline-primary:hover {
+  background-color: #007bff;
+  color: #fff;
+}
+
+/* CARD STYLES */
+.card {
+  background-color: #333; /* Màu nền cho card */
+  border: 1px solid #555; /* Viền card */
+  color: #f8f9fa; /* Màu chữ trong card */
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  cursor: pointer;
+  height: 100%; /* Đảm bảo card có chiều cao bằng nhau trong cùng một hàng */
+  display: flex;
+  flex-direction: column; /* Đảm bảo nội dung card sắp xếp theo cột */
+}
+
+.card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+}
+
+.card-img-top {
+  height: 250px; /* Chiều cao cố định cho ảnh */
+  object-fit: cover; /* Đảm bảo ảnh được căn chỉnh và không bị méo */
+}
+
+.card-body {
+  flex-grow: 1; /* Đảm bảo body card lấp đầy phần còn lại của chiều cao */
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between; /* Đẩy title lên trên, các thông tin khác xuống dưới */
+}
+
+.card-title {
+  font-size: 1.1em;
+  font-weight: bold;
+  margin-bottom: 0.5rem; /* Khoảng cách dưới tiêu đề */
+}
+
+.card-text {
+  font-size: 0.9em;
+  color: #bbb;
+  margin-bottom: 0.2rem; /* Giảm khoảng cách giữa các dòng text */
+}
+
+/* PAGINATION STYLES */
+.pagination .page-item .page-link {
+  background-color: #333;
+  border-color: #555;
+  color: #007bff;
+}
+
+.pagination .page-item.active .page-link,
+.pagination .page-item .page-link:hover {
+  background-color: #007bff;
+  border-color: #007bff;
+  color: #fff;
+}
+
+/* --- DROPDOWN SCROLLABLE --- */
+.dropdown-menu {
+  max-height: 300px; /* Chiều cao tối đa của dropdown */
+  overflow-y: auto; /* Kích hoạt cuộn dọc nếu nội dung vượt quá chiều cao */
+  background-color: #333; /* Đảm bảo màu nền thống nhất */
+  border-color: #555; /* Đảm bảo viền thống nhất */
+}
+
+.dropdown-item {
+  color: #f8f9fa; /* Màu chữ cho các mục dropdown */
+}
+
+.dropdown-item:hover {
+  background-color: #007bff; /* Màu nền khi hover */
+  color: #fff; /* Màu chữ khi hover */
+}
+
+/* --- RESPONSIVE GRID FOR CARDS --- */
+
+/* Mặc định cho màn hình nhỏ nhất (điện thoại dọc) */
+.row-cols-1.row-cols-md-5 > .col {
+  flex: 0 0 100%; /* 1 cột */
+  max-width: 100%;
+}
+
+/* Cho màn hình điện thoại ngang (landscape phones, ~576px) và nhỏ hơn tablets */
+@media (min-width: 576px) {
+  .row-cols-1.row-cols-md-5 > .col {
+    flex: 0 0 50%; /* 2 cột */
+    max-width: 50%;
   }
+}
+
+/* Cho màn hình tablet (tablets, ~768px) */
+@media (min-width: 768px) {
+  .row-cols-1.row-cols-md-5 > .col {
+    flex: 0 0 33.333333%; /* 3 cột */
+    max-width: 33.333333%;
+  }
+}
+
+/* Cho màn hình laptop nhỏ (desktops, ~992px) */
+@media (min-width: 992px) {
+  .row-cols-1.row-cols-md-5 > .col {
+    flex: 0 0 25%; /* 4 cột */
+    max-width: 25%;
+  }
+}
+
+/* Cho màn hình desktop lớn (large desktops, ~1200px) và lớn hơn */
+@media (min-width: 1200px) {
+  .row-cols-1.row-cols-md-5 > .col {
+    flex: 0 0 20%; /* 5 cột */
+    max-width: 20%;
+  }
+}
+
+/* Thêm một số padding/margin cho container để nội dung không dính sát các cạnh */
+.container {
+  padding-left: 15px;
+  padding-right: 15px;
+}
